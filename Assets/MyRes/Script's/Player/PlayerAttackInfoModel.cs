@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BaseAttack : MonoBehaviour
+[RequireComponent(typeof(PlayerInputController), typeof(PlayerInfoModel))]
+public class PlayerAttackInfoModel : MonoBehaviour
 {
     [SerializeField] private PlayerInputController inputController;
     [SerializeField] private PlayerViewController viewController;
@@ -18,8 +19,8 @@ public class BaseAttack : MonoBehaviour
     [SerializeField] private Vector2 downAttackArea;
     [SerializeField] private Vector2 sideAttackArea;
     [SerializeField] private LayerMask enemyLayer;
-    [SerializeField] private float damage;
-    [SerializeField] private int upAndDownAttackAngle;// recomended value ~90
+    [SerializeField] private float damage = 10;
+    [SerializeField] private int upAndDownAttackAngle = 90;// recomended value ~90
     private float timeBetweenAttack;
     private float timeSinceAttack;
 
@@ -33,6 +34,7 @@ public class BaseAttack : MonoBehaviour
         timeSinceAttack += Time.deltaTime;
         if (inputController.IsLeftMouseButtonDown && timeSinceAttack >= timeBetweenAttack)
         {
+            playerInfoModel.IsAttacking = true;
             timeSinceAttack = 0;
 
             if (inputController.AxisY == 0 || inputController.AxisY < 0 && playerInfoModel.OnGround)
@@ -51,6 +53,8 @@ public class BaseAttack : MonoBehaviour
                 viewController.AttackEffectAtAngle(prefabAttackEffect, -upAndDownAttackAngle, downAttackTransform);
             }
         }
+        else
+            playerInfoModel.IsAttacking = false;
     }
 
     private void Hit(Transform attackTransform, Vector2 attackArea, ref bool impactDir, float impactStrenght)
@@ -58,17 +62,11 @@ public class BaseAttack : MonoBehaviour
         Collider2D[] objToHit = Physics2D.OverlapBoxAll(attackTransform.position, attackArea, 0, enemyLayer);
 
         if (objToHit.Length > 0)
-        {
             impactDir = true;
-        }
 
         for (int i = 0; i < objToHit.Length; i++)
-        {
             if (objToHit[i].GetComponent<EnemyTest>() != null)
-            {
                 objToHit[i].GetComponent<EnemyTest>().EnemyHit(damage, (transform.position - objToHit[i].transform.position).normalized, impactStrenght);
-            }
-        }
     }
 
     private void OnDrawGizmos()
@@ -83,5 +81,4 @@ public class BaseAttack : MonoBehaviour
         Gizmos.DrawWireCube(upAttackTransform.position, upAttackArea);
         Gizmos.DrawWireCube(downAttackTransform.position, downAttackArea);
     }
-
 }

@@ -14,24 +14,21 @@ public class PlayerViewController : MonoBehaviour
 
     private void SetAnimation()
     {
-        switch (playerInfoModel.playerState)
-        {
-            case PlayerInfoModel.PlayerState.Walking:
-                SetWalkAnimation();
-                break;
 
-            case PlayerInfoModel.PlayerState.Jumping:
-                SetJumpAnimation();
-                break;
+        if (playerInfoModel.IsWalking && !playerInfoModel.IsJumping && !playerInfoModel.IsDashing && !playerInfoModel.IsAttacking)
+            SetWalkAnimation();
 
-            case PlayerInfoModel.PlayerState.Attacking:
-                SetAttackAnimation();
-                break;
+        if (!playerInfoModel.IsJumping && !playerInfoModel.IsWalking && !playerInfoModel.IsDashing && !playerInfoModel.IsAttacking)
+            SetIdleAnimation();
 
-            case PlayerInfoModel.PlayerState.Dashing:
-                SetDashAnimation();
-                break;
-        }
+        if (playerInfoModel.IsJumping)
+            SetJumpAnimation();
+
+        if(playerInfoModel.IsDashing)
+            SetDashAnimation();
+
+        if(playerInfoModel.IsAttacking)
+            SetAttackAnimation();
     }
 
     private void Flip()
@@ -55,16 +52,11 @@ public class PlayerViewController : MonoBehaviour
         attackEffect.transform.localScale = new Vector2(transform.localScale.x, transform.localScale.y);
     }
 
-    public void AttackEffect(GameObject attackEffect, Transform attackTransform)
-    {
-        Instantiate(attackEffect, attackTransform);
-    }
+    public void AttackEffect(GameObject attackEffect, Transform attackTransform) { Instantiate(attackEffect, attackTransform); }
 
-    private void SetWalkAnimation() { animator.SetBool("Walking", playerInfoModel.rigidbody.velocity.x != 0 && playerInfoModel.OnGround); }
-
-    private void SetJumpAnimation() { animator.SetBool("Jumping", !playerInfoModel.OnGround); }
-
+    private void SetWalkAnimation() { animator.SetTrigger("Walking"); }
+    private void SetIdleAnimation() { animator.SetTrigger("Idle"); }
+    private void SetJumpAnimation() { animator.SetTrigger("Jumping"); }
     private void SetAttackAnimation() { animator.SetTrigger("Attacking"); }
-
     private void SetDashAnimation() { animator.SetTrigger("Dashing"); }
 }

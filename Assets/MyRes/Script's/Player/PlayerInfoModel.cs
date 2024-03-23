@@ -8,38 +8,18 @@ using System;
 /// <summary>
 /// Скрипт отвечает за контроль движения сущности. 
 /// </summary>
+[RequireComponent(typeof(PlayerInputController))]
 public class PlayerInfoModel : MonoBehaviour
 {
-
-    public enum PlayerState
-    {
-        Idle,
-        Walking,
-        Jumping,
-        Dashing,
-        Attacking
-    }
-
     public enum PlayerLookingTo
     {
         LookingLeft,
         LookingRight
     }
 
-    [SerializeField] PlayerInputController inputController;
-    [SerializeField] PlayerViewController viewController;
-
     [Header("Speed")]
     [SerializeField] private float walkSpeed;
     [Space(8)]
-
-    [Header("Dash")]
-    [SerializeField] private GameObject prefabDashEffect;
-    [SerializeField] private float dashTime;
-    [SerializeField] private float dashSpeed;
-    [SerializeField] private float dashCooldown;
-    private bool canDash = true;
-    private bool isDashed;
 
     [Header("Length of the ground check ray")]
     [SerializeField] private float groundCheckYRayDistance = 0.2f;
@@ -49,32 +29,35 @@ public class PlayerInfoModel : MonoBehaviour
     [SerializeField] private Transform groundCheckEntity;
     [SerializeField] private LayerMask groundLayer;
 
+    private PlayerInputController inputController;
+    public float gravity;
 
-    private bool onGround;
-    public bool OnGround => onGround;
+    public bool OnGround {  get; private set; }
+    public bool IsWalking { get; private set; }
+    public bool IsJumping;
+    public bool IsDashing;
+    public bool IsAttacking;
+
 
     [Header("Debug")]
-    public Vector2 moveDir;
-    public new Rigidbody2D rigidbody;
-    public float gravity;
-    public PlayerState playerState;
+    private Rigidbody2D rigidbody;
     public PlayerLookingTo lookingTo;
 
     private void Start()
     {
         rigidbody = GetComponent<Rigidbody2D>();
+        inputController = GetComponent<PlayerInputController>();
+
         gravity = rigidbody.gravityScale;
     }
 
     void Update()
     {
-        if (playerState == PlayerState.Dashing) return;
+        if (IsDashing) return;
         UpdateLookingTo();
         CheckGround();
 
         Move();
-        Dash();
-
     }
 
     private void Move()
@@ -82,59 +65,52 @@ public class PlayerInfoModel : MonoBehaviour
         if (inputController.AxisX == 0)
         {
             rigidbody.velocity = new Vector2(0, rigidbody.velocity.y);
-            playerState = PlayerState.Idle;
+            IsWalking = false;
         }
         else
         {
             rigidbody.velocity = new Vector2(walkSpeed * inputController.AxisX, rigidbody.velocity.y);
-            playerState = PlayerState.Walking;
+            IsWalking = true;
         }
     }
-
-    #region Dash
-    private void Dash()
-    {
-        if(inputController.IsDownLeftShift  && canDash && !isDashed)
-        {
-            StartCoroutine(DashCalculate());
-            isDashed = true;
-        }
-
-        if(onGround) isDashed = false;
-    }
-
-    private IEnumerator DashCalculate()
-    {
-        canDash = false;
-        playerState = PlayerState.Dashing;
-        rigidbody.gravityScale = 0;
-        rigidbody.velocity = new Vector2(transform.localScale.x * dashSpeed, 0);
-        if (onGround) Instantiate(prefabDashEffect, transform);
-        yield return new WaitForSeconds(dashTime);
-        rigidbody.gravityScale = gravity;
-        playerState = PlayerState.Idle;
-        yield return new WaitForSeconds(dashCooldown);
-        canDash = true;
-    }
-    #endregion
-
 
     private void CheckGround()
     {
         if (Physics2D.Raycast(groundCheckEntity.position, Vector2.down, groundCheckYRayDistance, groundLayer)
             || Physics2D.Raycast(groundCheckEntity.position + new Vector3( groundCheckXRayDistance, 0, 0), Vector2.down, groundCheckYRayDistance, groundLayer) 
             || Physics2D.Raycast(groundCheckEntity.position + new Vector3(-groundCheckXRayDistance, 0, 0), Vector2.down, groundCheckYRayDistance, groundLayer))
-            onGround = true;
+            OnGround = true;
         else
-            onGround = false;
+            OnGround = false;
     }
 
     private void UpdateLookingTo()
     {
         if (inputController.AxisX > 0)
             lookingTo = PlayerLookingTo.LookingRight;
-        else
+
+        if (inputController.AxisX < 0)
             lookingTo = PlayerLookingTo.LookingLeft;
+    }
+
+    public void SetGravityScale(float setGravity)
+    {
+        rigidbody.gravityScale = setGravity;
+    }
+
+    public void ResetGravityScale()
+    {
+        rigidbody.gravityScale = gravity;
+    }
+
+    public void SetRigidbodyVelocity(Vector2 vector2)
+    {
+        rigidbody.velocity = vector2;
+    }
+
+    public Vector2 GetRigitbodyVelocity()
+    {
+        return rigidbody.velocity;
     }
 
 #if UNITY_EDITOR

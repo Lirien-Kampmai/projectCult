@@ -17,6 +17,11 @@ public class PlayerImpactEffect : MonoBehaviour
     [SerializeField] public float impactYSpeed = 100;
     int stepsXRecoiled, stepsYRecoiled;
 
+    private void Update()
+    {
+        Impact();
+    }
+
     private void Impact()
     {
         if (isImpactRecoilingX)
@@ -24,32 +29,28 @@ public class PlayerImpactEffect : MonoBehaviour
             switch (playerInfoModel.lookingTo)
             {
                 case PlayerInfoModel.PlayerLookingTo.LookingRight:
-                    playerInfoModel.GetComponent<Rigidbody>().velocity = new Vector2(-impactXSpeed, 0);
+                    playerInfoModel.SetRigidbodyVelocity(new Vector2(-impactXSpeed, 0));
                     break;
 
                 case PlayerInfoModel.PlayerLookingTo.LookingLeft:
-                    playerInfoModel.GetComponent<Rigidbody>().velocity = new Vector2(impactXSpeed, 0);
+                    playerInfoModel.SetRigidbodyVelocity(new Vector2(impactXSpeed, 0));
                     break;
             }
         }
 
         if (isImpactRecoilingY)
         {
-            playerInfoModel.rigidbody.gravityScale = 0;
             if (playerInputController.AxisY < 0)
-            {
-                playerInfoModel.GetComponent<Rigidbody>().velocity = new Vector2(GetComponent<Rigidbody>().velocity.x, impactYSpeed);
-            }
+                playerInfoModel.SetRigidbodyVelocity(new Vector2(playerInfoModel.GetRigitbodyVelocity().x, impactYSpeed));
             else
-            {
-                playerInfoModel.GetComponent<Rigidbody>().velocity = new Vector2(GetComponent<Rigidbody>().velocity.x, -impactYSpeed);
-            }
-        }
-        else
-        {
-            playerInfoModel.rigidbody.gravityScale = playerInfoModel.gravity;
+                playerInfoModel.SetRigidbodyVelocity(new Vector2(playerInfoModel.GetRigitbodyVelocity().x, -impactYSpeed));
         }
 
+        CheckStopRecoil();
+    }
+
+    private void CheckStopRecoil()
+    {
         if (isImpactRecoilingX && stepsXRecoiled < impactXSteps)
             stepsXRecoiled++;
         else

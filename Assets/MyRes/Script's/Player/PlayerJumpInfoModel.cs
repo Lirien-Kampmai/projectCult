@@ -1,27 +1,28 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class BaseJump : MonoBehaviour
+[RequireComponent(typeof(PlayerInputController), typeof (PlayerInfoModel))]
+public class PlayerJumpInfoModel : MonoBehaviour
 {
-
-
-
     [Header("Jump")]
-    [SerializeField] private float jumpForce = 30f;
-    [SerializeField] private float canisTime = 0.3f;
-    [SerializeField] private float canJumpTime;
-    [SerializeField] private int maxSecondJumps = 1;
-    private int SecondJumpsBuffer;
-    private float jumpBufferTime;
+    [SerializeField] private float jumpForce      = 30f;
+    [SerializeField] private float canisTime      = 0.3f;
+    [SerializeField] private float canJumpTime    = 1;
+    [SerializeField] private int   maxSecondJumps = 1;
+
     private float bufferCanisTime;
+    private float jumpBufferTime;
+
+    private int firstJumpBuffer;
+    private int SecondJumpsBuffer;
+
     private bool isJumping;
-    private bool isCanis = true;
+    private bool isDashing;
     private bool canFirstJump;
     private bool canSecondJump;
+    private bool isCanis = true;
     private bool isLockSecondJump = false;
-    private PlayerInfoModel playerInfoModel;
+
+    private PlayerInfoModel       playerInfoModel;
     private PlayerInputController inputController;
 
     private void Start()
@@ -32,6 +33,10 @@ public class BaseJump : MonoBehaviour
 
     private void Update()
     {
+        playerInfoModel.IsJumping = isJumping;
+        playerInfoModel.IsDashing = isDashing;
+
+
         CanisState();
         CalculateJumpFrames();
 
@@ -50,32 +55,26 @@ public class BaseJump : MonoBehaviour
 
     public void FirstJump()
     {
-        if(inputController.IsDownSpace kl canFirstJump)
-        {
+        if(!playerInfoModel.OnGround)
             isJumping = true;
-        }
-        else
-        {
-            isJumping = false;
-        }
+        else isJumping = false;
 
 
-        if (!isJumping && canFirstJump && isCanis)
+        if (!isJumping && canFirstJump && isCanis && !isDashing && firstJumpBuffer <= 0)
         {
-            playerInfoModel.rigidbody.velocity = new Vector2(playerInfoModel.rigidbody.velocity.x, jumpForce);
+            playerInfoModel.SetRigidbodyVelocity(new Vector2(playerInfoModel.GetRigitbodyVelocity().x, jumpForce));
+            firstJumpBuffer++;
         }
-
-        if (inputController.IsUpSpace && playerInfoModel.rigidbody.velocity.y > 0)
-        {
-            playerInfoModel.rigidbody.velocity = new Vector2(playerInfoModel.rigidbody.velocity.x, 0);
-        }
+            
+        if (inputController.IsUpSpace && playerInfoModel.GetRigitbodyVelocity().y > 0)
+            playerInfoModel.SetRigidbodyVelocity(new Vector2(playerInfoModel.GetRigitbodyVelocity().x, 0));
     }
 
     public void SecondJump()
     {
-        if(inputController.IsUpSpace && canSecondJump && isJumping)
+        if(inputController.IsDownSpace && canSecondJump && isJumping && !isDashing)
         {
-            playerInfoModel.rigidbody.velocity = new Vector2(playerInfoModel.rigidbody.velocity.x, jumpForce);
+            playerInfoModel.SetRigidbodyVelocity(new Vector2(playerInfoModel.GetRigitbodyVelocity().x, jumpForce));
             SecondJumpsBuffer++;
         }
     }
@@ -92,7 +91,7 @@ public class BaseJump : MonoBehaviour
     {
         if(!isLockSecondJump)
         {
-            if (!playerInfoModel.OnGround && SecondJumpsBuffer < maxSecondJumps)
+            if (!playerInfoModel.OnGround && SecondJumpsBuffer < maxSecondJumps && isJumping)
                 canSecondJump = true;
             else
                 canSecondJump = false;
@@ -101,14 +100,14 @@ public class BaseJump : MonoBehaviour
 
     private void CalculateJumpFrames()
     {
-        if (inputController.IsDownSpace)
+        if (inputController.IsDownSpace && playerInfoModel.OnGround)
             jumpBufferTime = canJumpTime;
     }
     private void CanisState()
     {
         CalculateCanisTime();
 
-        if (bufferCanisTime >= 0)
+        if (bufferCanisTime >= 0 && !canSecondJump)
             isCanis = true;
         else
             isCanis = false;
@@ -118,6 +117,7 @@ public class BaseJump : MonoBehaviour
         if (playerInfoModel.OnGround)
         {
             SecondJumpsBuffer = 0;
+            firstJumpBuffer = 0;
             bufferCanisTime = canisTime;
         }
         else
