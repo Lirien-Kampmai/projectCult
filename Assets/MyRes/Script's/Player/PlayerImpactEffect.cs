@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerImpactEffect : MonoBehaviour
 {
-    public PlayerInfoModel playerInfoModel;
+    public Entity playerInfoModel;
     public PlayerInputController playerInputController;
 
     public bool isImpactRecoilingX;
@@ -28,11 +28,11 @@ public class PlayerImpactEffect : MonoBehaviour
         {
             switch (playerInfoModel.lookingTo)
             {
-                case PlayerInfoModel.PlayerLookingTo.LookingRight:
+                case Entity.PlayerLookingTo.LookingRight:
                     playerInfoModel.SetRigidbodyVelocity(new Vector2(-impactXSpeed, 0));
                     break;
 
-                case PlayerInfoModel.PlayerLookingTo.LookingLeft:
+                case Entity.PlayerLookingTo.LookingLeft:
                     playerInfoModel.SetRigidbodyVelocity(new Vector2(impactXSpeed, 0));
                     break;
             }

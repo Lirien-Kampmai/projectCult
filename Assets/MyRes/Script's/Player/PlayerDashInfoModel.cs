@@ -39,6 +39,7 @@ public class PlayerDashInfoModel : MonoBehaviour
     private IEnumerator DashCalculate()
     {
         isDashed = true;
+        canDash = false;
         infoModel.SetGravityScale(0);
         infoModel.SetRigidbodyVelocity(new Vector2(transform.localScale.x * dashSpeed, 0));
         if(infoModel.OnGround) Instantiate(prefabDashEffect, transform);

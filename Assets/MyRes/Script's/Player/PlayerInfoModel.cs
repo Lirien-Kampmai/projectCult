@@ -2,6 +2,7 @@ using System.Linq;
 using UnityEngine;
 using System.Collections;
 using System;
+using System.Collections.Generic;
 
 
 
@@ -9,17 +10,13 @@ using System;
 /// Скрипт отвечает за контроль движения сущности. 
 /// </summary>
 [RequireComponent(typeof(PlayerInputController))]
-public class PlayerInfoModel : MonoBehaviour
+public class PlayerInfoModel : Entity
 {
     public enum PlayerLookingTo
     {
         LookingLeft,
         LookingRight
     }
-
-    [Header("Speed")]
-    [SerializeField] private float walkSpeed;
-    [Space(8)]
 
     [Header("Length of the ground check ray")]
     [SerializeField] private float groundCheckYRayDistance = 0.2f;
@@ -29,24 +26,27 @@ public class PlayerInfoModel : MonoBehaviour
     [SerializeField] private Transform groundCheckEntity;
     [SerializeField] private LayerMask groundLayer;
 
+
     private PlayerInputController inputController;
-    public float gravity;
+    private AttackLogic attackLogic;
 
-    public bool OnGround {  get; private set; }
-    public bool IsWalking { get; private set; }
-    public bool IsJumping;
-    public bool IsDashing;
-    public bool IsAttacking;
 
+    
 
     [Header("Debug")]
-    private Rigidbody2D rigidbody;
-    public PlayerLookingTo lookingTo;
+
+    private float impactRecoilTimer;
+
+    protected override void Awake()
+    {
+        base.Awake();
+    }
 
     private void Start()
     {
-        rigidbody = GetComponent<Rigidbody2D>();
+        
         inputController = GetComponent<PlayerInputController>();
+        attackLogic = GetComponent<AttackLogic>();
 
         gravity = rigidbody.gravityScale;
     }
@@ -54,10 +54,34 @@ public class PlayerInfoModel : MonoBehaviour
     void Update()
     {
         if (IsDashing) return;
-        UpdateLookingTo();
         CheckGround();
 
         Move();
+        AttackCheck();
+
+        UpdateLookingTo();
+        ImpactRecoiling();
+    }
+
+    private void AttackCheck()
+    {
+        if (inputController.IsLeftMouseButtonDown)
+            attackLogic.Attack();
+    }
+
+    private void ImpactRecoiling()
+    {
+        if (!isImpactRecoiling) return;
+
+        if (impactRecoilTimer < impactRecoilLenght)
+        {
+            impactRecoilTimer += Time.deltaTime;
+        }
+        else
+        {
+            isImpactRecoiling = false;
+            impactRecoilTimer = 0;
+        }
     }
 
     private void Move()
@@ -69,7 +93,7 @@ public class PlayerInfoModel : MonoBehaviour
         }
         else
         {
-            rigidbody.velocity = new Vector2(walkSpeed * inputController.AxisX, rigidbody.velocity.y);
+            rigidbody.velocity = new Vector2(speed * inputController.AxisX, rigidbody.velocity.y);
             IsWalking = true;
         }
     }
@@ -84,34 +108,7 @@ public class PlayerInfoModel : MonoBehaviour
             OnGround = false;
     }
 
-    private void UpdateLookingTo()
-    {
-        if (inputController.AxisX > 0)
-            lookingTo = PlayerLookingTo.LookingRight;
 
-        if (inputController.AxisX < 0)
-            lookingTo = PlayerLookingTo.LookingLeft;
-    }
-
-    public void SetGravityScale(float setGravity)
-    {
-        rigidbody.gravityScale = setGravity;
-    }
-
-    public void ResetGravityScale()
-    {
-        rigidbody.gravityScale = gravity;
-    }
-
-    public void SetRigidbodyVelocity(Vector2 vector2)
-    {
-        rigidbody.velocity = vector2;
-    }
-
-    public Vector2 GetRigitbodyVelocity()
-    {
-        return rigidbody.velocity;
-    }
 
 #if UNITY_EDITOR
     private void OnDrawGizmos()
